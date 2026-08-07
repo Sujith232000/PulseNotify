@@ -27,8 +27,13 @@ export const config = {
     },
     worker:{
         concurrency: getNumberEnv('CONCURRENCY')
+    },
+    idempotency:{
+        ttl: getNumberEnv('IDEMPOTENCY_TTL_SECONDS')
+    },
+    batching:{
+        ttl: getNumberEnv('BATCHING_TTL_SECONDS')
     }
     
 }
 
-console.log(config)

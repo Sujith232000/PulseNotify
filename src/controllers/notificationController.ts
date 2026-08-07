@@ -1,6 +1,10 @@
 import type {Request, Response} from 'express'
 import {notificationSchema} from '../validation/notificationSchema.js'
+import { idempotencyKeySchema } from '../validation/idempotencyKeySchema.js'
 import {notificationQueue} from '../queues/notificationQueue.js'
+import {isDuplicate} from '../idempotencyService.js'
+import {config} from '../config/config.js'
+import { checkBatching } from '../batchingService.js'
 
 export const sendNotification = (async(req: Request, res: Response)=>{
     const validatedPayload = notificationSchema.safeParse(req.body) // safeparse gives out two things when validation passes it gives (success:true, data) when it fails it gives (success:false, error)
@@ -29,7 +33,30 @@ export const sendNotification = (async(req: Request, res: Response)=>{
         })
         return res.status(400).json({errors: validationPayloadErrors})
     }
+    const idempotencyKey = req.headers['idempotency-key']
+    const validatedKey = idempotencyKeySchema.safeParse(idempotencyKey)
+    if (validatedKey.success){
+        const duplicate = await isDuplicate(validatedKey.data, config.idempotency.ttl)
+        if (duplicate){
+        return res.status(409).json({message:'Duplicate request: this notification has already been processed'})
+        }
+    }
+    else{
+        if (!idempotencyKey){
+            return res.status(400).json({message: 'idempotency key header is missing'})
+        }
+        else{
+            return res.status(400).json({message: "idempotency key header must be a valid UUID"})
+        }
+    }
+
+    if(req.body.priority === 'urgent'){
     await notificationQueue.add('send notification', req.body)
     res.status(201).json({message:'created Successfully'})
+    }
+    else{
+    await checkBatching(req.body)
+    res.status(202).json({message:"Accepted Batch processing started"})
+    }
 })
 
