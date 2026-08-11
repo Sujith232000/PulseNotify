@@ -7,12 +7,10 @@ import {z} from 'zod'
 type NotificationInput = z.infer<typeof notificationSchema>
 
 export async function checkBatching(notification:NotificationInput): Promise<void>{
-    const flagCreated = await redis.set(`batch-window:${notification.receiverId}`,"1",'EX', config.batching.ttl, 'NX' )// only set this key if it did not exist
-    console.log('flagCreated result:', flagCreated)
-    await redis.rpush(`batch:${notification.receiverId}`, JSON.stringify(notification))
-    console.log('rpush done')
+    const flagCreated = await redis.set(`batch-window:${notification.receiverId}:${notification.channel}`,"1",'EX', config.batching.ttl, 'NX' )// only set this key if it did not exist
+    await redis.rpush(`batch:${notification.receiverId}:${notification.channel}`, JSON.stringify(notification))
     if(flagCreated === 'OK'){ //key was not there i just created it 
-       await batchQueue.add('process-batch',{receiverId: notification.receiverId}, {delay:config.batching.ttl*1000})
+       await batchQueue.add('process-batch',{receiverId: notification.receiverId,channel: notification.channel}, {delay:config.batching.ttl*1000})
     }
 
 }

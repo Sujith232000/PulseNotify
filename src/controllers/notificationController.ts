@@ -1,15 +1,16 @@
 import type {Request, Response} from 'express'
 import {notificationSchema} from '../validation/notificationSchema.js'
 import { idempotencyKeySchema } from '../validation/idempotencyKeySchema.js'
-import {notificationQueue} from '../queues/notificationQueue.js'
 import {isDuplicate} from '../idempotencyService.js'
 import {config} from '../config/config.js'
 import { checkBatching } from '../batchingService.js'
+import {channelQueues} from '../queueService.js'
 
 export const sendNotification = (async(req: Request, res: Response)=>{
     const validatedPayload = notificationSchema.safeParse(req.body) // safeparse gives out two things when validation passes it gives (success:true, data) when it fails it gives (success:false, error)
+    let validatedNotification 
     if (validatedPayload.success){
-        req.body = validatedPayload.data 
+        validatedNotification = validatedPayload.data 
     }
     else{
         /**
@@ -50,12 +51,13 @@ export const sendNotification = (async(req: Request, res: Response)=>{
         }
     }
 
-    if(req.body.priority === 'urgent'){
-    await notificationQueue.add('send notification', req.body)
+    if(validatedNotification.priority === 'urgent'){
+    const queue = channelQueues[validatedNotification.channel]
+    await queue.add('send notification', validatedNotification)
     res.status(201).json({message:'created Successfully'})
     }
     else{
-    await checkBatching(req.body)
+    await checkBatching(validatedNotification)
     res.status(202).json({message:"Accepted Batch processing started"})
     }
 })
