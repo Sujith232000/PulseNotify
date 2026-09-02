@@ -9,3 +9,4 @@ dist/
 
 # Editor directories
 .vscode/
+/src/generated/prisma

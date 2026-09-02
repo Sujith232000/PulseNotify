@@ -1,0 +1,19 @@
+services:
+  redis: 
+    image: redis
+    ports: 
+      - "6379:6379"
+    container_name: redis-pulsenotify
+  postgres:
+    image: postgres:16
+    ports: 
+      - "5433:5432"
+    container_name: postgres-pulsenotify
+    environment: 
+      POSTGRES_USER: sujith-db
+      POSTGRES_PASSWORD: sujith123
+      POSTGRES_DB: preferences_db
+    volumes:
+     - postgres_data:/var/lib/postgresql/data 
+volumes: 
+  postgres_data: 

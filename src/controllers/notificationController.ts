@@ -5,6 +5,8 @@ import {isDuplicate} from '../idempotencyService.js'
 import {config} from '../config/config.js'
 import { checkBatching } from '../batchingService.js'
 import {channelQueues} from '../queueService.js'
+import { getReceiverPreferences } from '../preference_Service.js'
+import { email } from 'zod'
 
 export const sendNotification = (async(req: Request, res: Response)=>{
     const validatedPayload = notificationSchema.safeParse(req.body) // safeparse gives out two things when validation passes it gives (success:true, data) when it fails it gives (success:false, error)
@@ -51,13 +53,38 @@ export const sendNotification = (async(req: Request, res: Response)=>{
         }
     }
 
+    const prefs = await getReceiverPreferences(validatedNotification.receiverId)
     if(validatedNotification.priority === 'urgent'){
-    const queue = channelQueues[validatedNotification.channel]
-    await queue.add('send notification', validatedNotification)
-    res.status(201).json({message:'created Successfully'})
+        
+        if (prefs?.email_enabled){
+            channelQueues.email.add("send email notification", validatedNotification)
+        }
+        if (prefs?.sms_enabled){
+            channelQueues.sms.add("send sms notification", validatedNotification)
+        }
+        if(prefs?.websocket_enabled){
+            channelQueues.websocket.add("open webcsocket" ,validatedNotification)
+        }
+        res.status(201).json({message:'created Successfully'})
     }
     else{
-    await checkBatching(validatedNotification)
+        let isChannelEnabled = false
+        if(prefs?.email_enabled){
+            await checkBatching({...validatedNotification, channel:"email"})
+            isChannelEnabled = true
+        }
+        if(prefs?.sms_enabled){
+            await checkBatching({...validatedNotification, channel:"sms"})
+            isChannelEnabled = true
+        }
+        if(prefs?.websocket_enabled){
+            await checkBatching({...validatedNotification, channel:"websocket"})
+            isChannelEnabled = true
+        }
+        if(isChannelEnabled === false){
+            return res.status(400).json({message:"Atleast one channel should be enabled"})
+        }
+
     res.status(202).json({message:"Accepted Batch processing started"})
     }
 })

@@ -33,6 +33,9 @@ export const config = {
     },
     batching:{
         ttl: getNumberEnv('BATCHING_TTL_SECONDS')
+    },
+    preference:{
+        ttl: getNumberEnv('PREFERENCE_TTL_SECONDS')
     }
     
 }
