@@ -37,6 +37,5 @@ export const config = {
     preference:{
         ttl: getNumberEnv('PREFERENCE_TTL_SECONDS')
     }
-    
 }
 
