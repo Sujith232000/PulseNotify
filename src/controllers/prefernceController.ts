@@ -4,9 +4,7 @@ import {PrismaClient} from '../generated/prisma/client.js'
 import { PrismaPg } from '@prisma/adapter-pg'
 import {redis} from '../redis/redisClient.js'
 import { getReceiverPreferences } from '../preference_Service.js'
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
-const prisma = new PrismaClient({adapter})
+import { prisma } from '../prismaClient.js'
 
 export const updatePreferences = (async(req:Request, res:Response)=>{
     const receiverId = req.params.receiverId
@@ -31,6 +29,7 @@ export const updatePreferences = (async(req:Request, res:Response)=>{
 
 })
 
+
 export const getpreferences = (async(req:Request, res:Response)=>{
     const receiverId = req.params.receiverId
     if (receiverId && typeof receiverId === 'string') {
@@ -41,5 +40,5 @@ export const getpreferences = (async(req:Request, res:Response)=>{
     return res.status(200).json({message: "row fetched successfully",preference})
 }else{
      return res.status(400).json({message: "invalid receiverId"})
-}  
+} 
 })

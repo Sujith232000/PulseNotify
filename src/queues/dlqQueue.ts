@@ -1,9 +1,10 @@
 import {Queue, type QueueOptions} from 'bullmq'
+import { config } from '../config/config.js'
 
 const dlqqueueoptions: QueueOptions = {
     connection:{
-        host: 'localhost',
-        port: 6379
+        host: config.redis.host,
+        port: config.redis.port
     }
 }
 

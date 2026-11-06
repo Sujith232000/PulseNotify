@@ -4,10 +4,10 @@ import {type ReceiverPreferenceModel} from './generated/prisma/models/ReceiverPr
 import { PrismaPg } from '@prisma/adapter-pg'
 import{config} from './config/config.js'
 import {preferenceSchema} from './validation/notificationSchema.js'
+import { prisma } from './prismaClient.js'
 
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
-const prisma = new PrismaClient({adapter})
+
 
 export async function getReceiverPreferences(receiverId:string):Promise<ReceiverPreferenceModel|null>{
     const cached = await redis.get(`preference:${receiverId}`)

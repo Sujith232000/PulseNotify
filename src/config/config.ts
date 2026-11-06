@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
-dotenv.config({ quiet: true })
+const envPath = process.env.NODE_ENV === 'test' ? '.env.test' : '.env'
+dotenv.config({ path: envPath, quiet: true })
 
 function getStringEnv(varName:string): string {
     if(process.env[varName]===undefined){

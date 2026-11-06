@@ -1,0 +1,15 @@
+services:
+  redis_test: 
+    image: redis
+    ports:    
+      - "6378:6379"
+    container_name: redis-pulsenotify-test
+  postgres_test:
+    image: postgres:16
+    ports: 
+      - "5434:5432"
+    container_name: postgres-pulsenotify-test
+    environment: 
+      POSTGRES_USER: sujith-db-test
+      POSTGRES_PASSWORD: sujith123
+      POSTGRES_DB: preferences_db_test
