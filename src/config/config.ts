@@ -37,6 +37,10 @@ export const config = {
     },
     preference:{
         ttl: getNumberEnv('PREFERENCE_TTL_SECONDS')
+    }, 
+    llm:{
+        provider: getStringEnv('LLM_PROVIDER'),
+        max_reply_chars: getNumberEnv('LLM_MAX_REPLY_CHARS')
     }
 }
 

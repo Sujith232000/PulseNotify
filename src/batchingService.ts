@@ -4,7 +4,7 @@ import { notificationSchema } from "./validation/notificationSchema.js";
 import{config} from './config/config.js'
 import {z} from 'zod'
 
-type NotificationInput = z.infer<typeof notificationSchema>
+export type NotificationInput = z.infer<typeof notificationSchema>
 
 export async function checkBatching(notification:NotificationInput): Promise<void>{
     const flagCreated = await redis.set(`batch-window:${notification.receiverId}:${notification.channel}`,"1",'EX', config.batching.ttl, 'NX' )// only set this key if it did not exist

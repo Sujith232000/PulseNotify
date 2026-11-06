@@ -4,6 +4,8 @@ import {config} from './config/config.js'
 import {redis} from './redis/redisClient.js'
 import { channelQueues } from './queueService.js'
 import { notificationSchema } from './validation/notificationSchema.js'
+import { summarizer } from './llm/index.js'                   
+import { type NotificationInput } from './batchingService.js'
 
 const workeroptions: WorkerOptions = {
     connection: {
@@ -45,7 +47,18 @@ async function handlejobFailure(job:Job| undefined, err:Error, prev: string):Pro
     }
 }
 
-
+function buildCountSummary(parsed: NotificationInput[]): string{
+    const counts: Record<string, number> = {}
+    for (const notification of parsed){
+        counts[notification.type] = (counts[notification.type] || 0) + 1
+    }
+    const parts: string[] = []
+    const entries = Object.entries(counts)
+    for (const[key, value] of entries){
+        parts.push(`${value} ${key}`)
+    }
+    return `you have ${parts.join(',')}`
+}
 
 const batchWorker = new Worker<BatchJobData>('batchQueue',async(job)=>{
     const receiverId = job.data.receiverId
@@ -63,17 +76,14 @@ const batchWorker = new Worker<BatchJobData>('batchQueue',async(job)=>{
             throw new Error("Invalid notification data in batch queue")
         }
     })
-    const counts: Record<string, number> = {}
-    for (const notification of parsed){
-        counts[notification.type] = (counts[notification.type] || 0) + 1
+    let finalMessage:string
+    try{
+        finalMessage = await summarizer.summarize(parsed)
+    }catch(err){
+        console.error('LLM summarize failed using count fallback', err)
+        finalMessage = buildCountSummary(parsed)
     }
-    const parts: string[] = []
-    const entries = Object.entries(counts)
-    for (const[key, value] of entries){
-        parts.push(`${value} ${key}`)
-    }
-    const summmary = parts.join(',')
-    const finalMessage = (`you have ${summmary}`)
+    
     channelQueues[channel].add('Send_Summary_Notification', {receiverId:receiverId, message: finalMessage, channel: channel})
     await redis.del(`batch:${receiverId}:${channel}`)
 }, workeroptions)
