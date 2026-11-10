@@ -6,6 +6,7 @@ import { channelQueues } from './queueService.js'
 import { notificationSchema } from './validation/notificationSchema.js'
 import { summarizer } from './llm/index.js'                   
 import { type NotificationInput } from './batchingService.js'
+import { withTimeout } from './llm/summarizer.js'
 
 const workeroptions: WorkerOptions = {
     connection: {
@@ -78,7 +79,7 @@ const batchWorker = new Worker<BatchJobData>('batchQueue',async(job)=>{
     })
     let finalMessage:string
     try{
-        finalMessage = await summarizer.summarize(parsed)
+        finalMessage = await withTimeout(summarizer.summarize(parsed), config.llm.timeout_ms)
     }catch(err){
         console.error('LLM summarize failed using count fallback', err)
         finalMessage = buildCountSummary(parsed)

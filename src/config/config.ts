@@ -40,7 +40,8 @@ export const config = {
     }, 
     llm:{
         provider: getStringEnv('LLM_PROVIDER'),
-        max_reply_chars: getNumberEnv('LLM_MAX_REPLY_CHARS')
+        max_reply_chars: getNumberEnv('LLM_MAX_REPLY_CHARS'),
+        timeout_ms : getNumberEnv('LLM_TIMEOUT_MS')
     }
 }
 
